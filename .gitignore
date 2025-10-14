@@ -1,0 +1,19 @@
+# Arquivo .gitignore
+
+# Pasta do ambiente virtual
+.venv/
+/.venv/
+
+# Arquivos de credenciais do Google Cloud
+*.json
+
+# Arquivos de configuração de ambiente
+.env
+
+# Arquivos compilados do Python
+__pycache__/
+*.pyc
+
+# Arquivos de configuração do editor/IDE
+.idea/
+.vscode/
