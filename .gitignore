@@ -17,3 +17,6 @@ __pycache__/
 # Arquivos de configuração do editor/IDE
 .idea/
 .vscode/
+
+credentials.json
+token.json
