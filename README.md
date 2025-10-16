@@ -1,119 +1,150 @@
-Analisador de Imagens de Satélite com Python/Flask
-Resumo
-API RESTful desenvolvida em Python com o framework Flask, projetada para a análise de imagens de satélite no formato GeoTIFF, com foco em aplicações para agricultura de precisão.
+# Analisador de Lavouras com Google Earth Engine e Flask
 
-Este projeto demonstra um fluxo de trabalho completo, desde a obtenção de dados de satélite na nuvem (Google Earth Engine) até a análise, interpretação e visualização de dados através de uma API local.
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)
+![Framework](https://img.shields.io/badge/Framework-Flask-black.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-Funcionalidades
-Cálculo de Índices Espectrais:
+## Resumo
 
-NDVI (Índice de Vegetação por Diferença Normalizada)
+Este projeto demonstra um fluxo de trabalho automatizado para agricultura de precisão, combinando o poder do Google Earth Engine (GEE) para obtenção de dados de satélite com uma API RESTful local desenvolvida em Python/Flask para análise geoespacial.
 
-GNDVI (Índice de Vegetação por Diferença Normalizada com a banda Verde)
+O sistema é composto por dois componentes principais:
+1.  **A API (`app.py`):** Um servidor Flask que recebe imagens GeoTIFF e realiza análises complexas, calculando índices espectrais, estatísticas e zoneamento.
+2.  **O Cliente (`requisidor.py`):** Um script Python que automatiza todo o processo: define uma área de interesse, busca a imagem mais recente no GEE, descarrega-a diretamente para a memória e envia-a para a API local para análise.
 
-NDWI (Índice de Água por Diferença Normalizada)
+## Visão Geral do Fluxo de Trabalho
 
-Análise Estatística: Extração de métricas como média, mínimo, máximo e desvio padrão para cada índice calculado.
+O fluxo de trabalho é totalmente automatizado e não requer downloads manuais:
 
-Zoneamento Agrícola: Classificação da área analisada em zonas de "Vigor Baixo", "Médio" e "Alto" com base nos valores de NDVI.
+1.  O **Cliente (`requisidor.py`)** é executado.
+2.  O utilizador define parâmetros-chave no script (latitude, longitude, raio).
+3.  O cliente contacta o **Google Earth Engine (GEE)**, encontra a melhor imagem Sentinel-2 para a área e data definidas, e gera uma URL de download direto.
+4.  O cliente descarrega a imagem em memória (como um buffer de bytes).
+5.  A imagem é enviada via requisição POST para a **API Flask (`app.py`)** local.
+6.  A **API** recebe o GeoTIFF, usa `Rasterio` e `NumPy` para processá-lo e calcula todos os índices.
+7.  A **API** retorna um relatório completo em formato **JSON** para o cliente.
+8.  O **Cliente** recebe o JSON, exibe-o formatado no terminal e gera um **mapa interativo (`.html`)** com os resultados, que abre automaticamente no navegador.
 
-Interpretações Dinâmicas: Geração de diagnósticos textuais baseados em limiares pré-definidos sobre os resultados numéricos.
+## Funcionalidades
 
-Geração de Imagem RGB: Endpoint para conversão de dados brutos de um GeoTIFF multibanda em uma imagem visual (PNG).
+### API (Servidor - `app.py`)
 
-Tecnologias
-Backend: Python 3, Flask
+* **Cálculo de Índices Espectrais:**
+    * `NDVI` (Índice de Vigor)
+    * `GNDVI` (Índice de Clorofila)
+    * `NDWI` (Índice de Umidade da Folha - baseado em NIR/SWIR)
+    * `NDMI` (Índice de Umidade da Vegetação)
+    * E outros, dependendo das bandas fornecidas.
+* **Análise Estatística:** Extração de média, mínimo, máximo e desvio padrão para cada índice.
+* **Zoneamento Agrícola:** Classificação automática da área em zonas de "Vigor Baixo", "Médio" e "Alto" (baseado em NDVI).
+* **Interpretações Dinâmicas:** Geração de diagnósticos em texto (ex: "Risco de Fogo Baixo") baseados nos resultados numéricos.
+* **Endpoint de Imagem RGB:** Converte um GeoTIFF multibanda numa imagem PNG visual.
 
-Análise Geoespacial: Rasterio, NumPy
+### Cliente (`requisidor.py`)
 
-Processamento de Imagem: Pillow
+* **Definição Paramétrica da Área:** Fácil configuração da área de interesse (AOI) através de variáveis de latitude, longitude e raio.
+* **Automação GEE:** Conexão direta com a API do Google Earth Engine para download de imagens sem a necessidade de usar o Google Drive.
+* **Análise em Memória:** Todo o fluxo de download e upload da imagem ocorre em memória, sem salvar ficheiros `.tif` intermédios no disco.
+* **Visualização de Resultados:**
+    * Impressão formatada ("pretty-print") da resposta JSON no terminal.
+    * Geração automática de um **mapa interativo (Folium)** que mostra a área analisada, um pino central e um *popup* com o relatório JSON completo.
 
-Fonte de Dados: Google Earth Engine (para exportação de imagens Sentinel-2)
+## Tecnologias Utilizadas
 
-Cliente de API: Postman
+* **Backend:** Python 3, Flask
+* **Análise Geoespacial:** Rasterio, NumPy
+* **Fonte de Dados na Nuvem:** Google Earth Engine API (`earthengine-api`)
+* **Visualização de Mapas:** Folium
+* **Processamento de Imagem:** Pillow
+* **Cliente HTTP:** Requests
 
-Arquitetura do Fluxo de Trabalho
-O projeto opera em um fluxo de duas etapas principais:
+## Configuração e Instalação
 
-Obtenção de Dados (Google Earth Engine):
+Siga estes passos para configurar o projeto no seu ambiente local.
 
-Scripts são utilizados no Google Earth Engine para filtrar e selecionar imagens do satélite Sentinel-2 sobre uma área de interesse.
+### 1. Pré-requisitos
 
-As bandas espectrais de interesse (ex: Azul, Verde, Vermelho, Infravermelho Próximo) são selecionadas.
+* Python 3.9 ou superior
+* Git
+* Uma conta Google com o [Google Earth Engine](https://earthengine.google.com/) ativado.
+* Um Projeto [Google Cloud Platform](https://console.cloud.google.com/) com a **"Earth Engine API"** ativada.
 
-A imagem resultante é exportada como um arquivo GeoTIFF para o Google Drive e transferida para o ambiente local.
+### 2. Instalação
 
-Análise via API (Python/Flask):
+1.  Clone o repositório:
+    ```bash
+    git clone [URL_DO_SEU_REPOSITORIO_AQUI]
+    cd [NOME_DA_PASTA_DO_PROJETO]
+    ```
 
-O servidor Flask é executado no ambiente local.
+2.  Crie e ative um ambiente virtual:
+    * **macOS/Linux:**
+        ```bash
+        python3 -m venv venv
+        source venv/bin/activate
+        ```
+    * **Windows (PowerShell):**
+        ```bash
+        python -m venv venv
+        .\venv\Scripts\Activate.ps1
+        ```
 
-O arquivo GeoTIFF é submetido a um dos endpoints da API através de uma requisição POST.
+3.  Instale as dependências:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-A API processa o arquivo em memória, executa os cálculos e retorna uma resposta em formato JSON com a análise completa ou um arquivo de imagem PNG.
+### 3. Autenticação Google
 
-Instruções de Uso
-Pré-requisitos
-Python 3.9 ou superior
+O projeto requer autenticação para aceder ao Google Earth Engine e ao seu projeto Google Cloud.
 
-Git
+1.  **Autenticar no GEE:**
+    * O script `requisidor.py` tentará fazer isso automaticamente na primeira execução (`ee.Authenticate()`), abrindo uma janela do navegador para login.
 
-Instalação
-Clone o repositório:
+2.  **Configurar o Projeto Google Cloud:**
+    * Encontre o **ID do seu Projeto** no Google Cloud Console.
+    * Este ID **não deve** ser escrito no código. Ele deve ser definido como uma **variável de ambiente** antes de executar o script.
 
-Bash
+## Como Executar
 
-git clone [URL_DO_SEU_REPOSITORIO_AQUI]
-cd [NOME_DA_PASTA_DO_PROJETO]
-Crie e ative um ambiente virtual:
+O projeto requer dois terminais a funcionar em simultâneo.
 
-Bash
+### Terminal 1: Iniciar o Servidor API
 
-# macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
+Neste terminal, vamos iniciar o servidor Flask.
 
-# Windows
-python -m venv venv
-.\venv\Scripts\activate
-Instale as dependências a partir do arquivo requirements.txt:
+```bash
+# Ative o ambiente virtual (se ainda não o fez)
+# source venv/bin/activate
 
-Bash
-
-pip install -r requirements.txt
-Execução
-Inicie o servidor Flask:
-
-Bash
-
+# Inicie a API
 flask run
-O servidor estará disponível em http://127.0.0.1:5000. Utilize um cliente de API para realizar as requisições.
 
-Endpoints da API
-1. Análise Agrícola Completa
-URL: /analisar_lavoura
+O servidor estará disponível em http://127.0.0.1:5000. Deixe este terminal a funcionar.
 
-Método: POST
+Terminal 2: Executar o Cliente
+Neste novo terminal, vamos definir a variável de ambiente e executar o script cliente.
 
-Entrada: Requisição multipart/form-data com uma chave imagem contendo o arquivo GeoTIFF de 4 bandas (Azul, Verde, Vermelho, NIR).
+Ative o ambiente virtual:
 
-Resposta de Sucesso (200 OK): Um objeto JSON contendo as estatísticas, zoneamento e interpretações dos índices.
+(Ex: .\venv\Scripts\Activate.ps1)
 
-JSON
+Defina a variável de ambiente com o seu ID do Projeto Google:
 
-{
-    "analise_ndvi": { ... },
-    "analise_umidade_ndwi": { ... },
-    "mensagem": "Análise da lavoura concluída!"
-}
-2. Geração de Imagem RGB
-URL: /gerar_imagem_rgb
+Windows (PowerShell):
 
-Método: POST
+PowerShell
 
-Entrada: Requisição multipart/form-data com uma chave imagem contendo um arquivo GeoTIFF com pelo menos 3 bandas (Azul, Verde, Vermelho).
+$env:GEE_PROJECT = "seu-id-de-projeto-aqui"
+macOS/Linux:
 
-Resposta de Sucesso (200 OK): Retorna um arquivo de imagem no formato image/png.
+Bash
 
-Licença
-Este projeto está distribuído sob a licença MIT. Consulte o arquivo LICENSE para mais detalhes.
+export GEE_PROJECT="seu-id-de-projeto-aqui"
+(Opcional) Edite o ficheiro requisidor.py para alterar as variáveis latitude_central, longitude_central ou raio_em_metros ao seu gosto.
 
+Execute o script cliente:
+
+Bash
+
+python requisidor.py
